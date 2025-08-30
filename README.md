@@ -1,116 +1,78 @@
-conexao_planilha_omie 🔗
-Este projeto é uma solução de automação simples e poderosa, desenvolvida em Google Apps Script, para simplificar o cadastro de clientes na OMIE. Ele elimina a necessidade de preencher inúmeros campos manualmente, permitindo que você colete apenas as informações essenciais através de um Formulário Google e as envie de forma automática e segura para o sistema.
+# 📊 Conexão Planilha → OMIE  
 
-✨ Motivação do Projeto
-A ideia surgiu para otimizar o fluxo de trabalho, transformando uma tarefa repetitiva e demorada em um processo ágil. Em vez de navegar por telas e preencher dezenas de campos, esta ferramenta foca na eficiência, economizando tempo e minimizando erros na inserção de dados.
+Automatização simples para envio de dados de clientes do **Google Forms/Sheets** diretamente para o **Omie ERP**, evitando preenchimento manual de informações que não são utilizadas no dia a dia.  
 
-🚀 Funcionalidades Principais
-Automação Inteligente: Captura dados de um Formulário Google e os envia para a API da OMIE.
+Este projeto nasceu da necessidade de **economizar tempo** no cadastro de clientes na empresa em que trabalho. Como apenas **5 campos** do cadastro da OMIE são realmente utilizados, criei esse script para integrar os dados de forma automática.  
 
-Segurança de Credenciais: As chaves da API são armazenadas de forma segura com o PropertiesService, mantendo-as fora do código.
+---
 
-Fluxo de Trabalho Otimizado: Reduz o trabalho manual, permitindo que você se concentre em tarefas mais importantes.
+## 🚀 Funcionalidades  
 
-Controle de Erros: O código inclui um tratamento robusto de falhas, com mensagens de erro claras registradas no console.
+- Captura respostas enviadas por um **Google Form**.  
+- Extrai apenas os campos necessários (nome, e-mail, telefone, CEP e código de integração).  
+- Monta o payload no formato aceito pela **API da OMIE**.  
+- Envia automaticamente o cliente via **UrlFetchApp**.  
+- Retorna no log se o envio foi **bem-sucedido** ou se ocorreu algum erro.  
 
-⚙️ Como Funciona o Fluxo
-Um novo cliente é registrado por meio de um Formulário Google.
+---
 
-A submissão do formulário aciona um gatilho (onFormSubmit) no Google Apps Script.
+## 🛠️ Tecnologias  
 
-O script extrai os dados, prepara o payload JSON e realiza uma chamada POST para a API da OMIE.
+- **Google Apps Script**  
+- **API Omie ERP**  
 
-A OMIE cadastra o cliente, e o script notifica o sucesso ou erro no console, oferecendo visibilidade total do processo.
+---
 
-🛠️ Configuração e Instalação
-Siga estes passos para configurar e começar a usar o projeto:
+## 📂 Estrutura  
 
-1. Crie os Formulários e a Planilha
-Crie seu Formulário Google com os campos desejados.
+- `onFormSubmit()` → Executado sempre que um formulário é enviado.  
+- `enviarClienteParaOmie(clienteData)` → Função responsável por enviar os dados para a API da OMIE.  
 
-Vincule-o a uma Planilha Google para que as respostas sejam salvas automaticamente.
+---
 
-2. Configure o Google Apps Script
-Na Planilha Google, acesse Extensões > Apps Script.
+## ⚙️ Pré-requisitos  
 
-Copie e cole o código completo do projeto no editor.
+1. Criar um **Google Form** com os seguintes campos mínimos:  
+   - Nome Fantasia / Razão Social  
+   - E-mail  
+   - Telefone  
+   - CEP / Código de integração  
 
-/*** * Esse código será APENAS para uso próprio e para a minha preguiça de inserir dados dos clientes na OMIE.
-*/
+2. Configurar as chaves da API da Omie:  
+   - `OMIE_APP_KEY`  
+   - `OMIE_APP_SECRET`  
 
-const props = PropertiesService.getScriptProperties();
+   > As chaves devem ser salvas em **Propriedades do Script** no projeto do Google Apps Script.  
 
-const OMIE_APP_KEY = props.getProperty('OMIE_APP_KEY');
-const OMIE_APP_SECRET = props.getProperty('OMIE_APP_SECRET');
+---
 
-function onFormSubmit(){
-    const form = FormApp.getActiveForm();
-    const formResponse = form.getResponses()[form.getResponses().length - 1].getItemResponses();
-    console.log(formResponse[0].getResponse())
+## ▶️ Como usar  
 
-    const clienteData = {
-      call: "IncluirCliente", 
-      app_key: OMIE_APP_KEY,     
-      app_secret: OMIE_APP_SECRET, 
-      param: [{
-        "codigo_cliente_integracao": String(formResponse[3].getResponse()).replace(/\D/g, ''),
-        "nome_fantasia": formResponse[0].getResponse(),
-        "razao_social": formResponse[0].getResponse(),
-        "contato": formResponse[0].getResponse(),
-        "email": formResponse[1].getResponse(),
-        "cep": String(formResponse[3].getResponse()).replace(/\D/g, ''), // Limpa o CEP também por segurança
-        "telefone1_ddd": String(formResponse[2].getResponse()).slice(0, 2), 
-        "telefone1_numero": String(formResponse[2].getResponse()).slice(2), 
-        "pessoa_fisica": "S", 
-      }]
-    };
+1. Abra o **Google Apps Script** vinculado ao seu Formulário.  
+2. Cole o código deste repositório no editor.  
+3. Configure suas variáveis de ambiente (`OMIE_APP_KEY` e `OMIE_APP_SECRET`) em:  
+   - `Editor > Configurações do Projeto > Propriedades do Script`.  
+4. Autorize o script para acessar o Form e realizar requisições externas.  
+5. Envie uma resposta de teste no Form e confira os logs:  
+   - `Executar > Ver registros`.  
 
-    const result = enviarClienteParaOmie(clienteData);
-    if (!result.success) {
-      console.log(`ERRO: Falha ao processar cliente ${formResponse[0].getResponse()}. Detalhes: ${result.message}`);
-    }
-}
+---
 
-function enviarClienteParaOmie(clienteData) {
-  const url = "[https://app.omie.com.br/api/v1/geral/clientes/](https://app.omie.com.br/api/v1/geral/clientes/)";
+## 📝 Observações  
 
-  const payloadParaEnvio = JSON.stringify(clienteData);
+> ⚠️ **Uso pessoal:** Este projeto foi desenvolvido **para uso próprio**, com o objetivo de reduzir o tempo de digitação manual de clientes na OMIE.  
+> Não cobre todos os campos e possibilidades oferecidos pela API.  
 
-  console.log("==============================================================");
-  console.log(`Preparando para enviar cliente: ${clienteData.param[0].razao_social}`);
-  console.log("JSON Payload que será enviado:");
-  console.log("==============================================================");
+---
 
-  const options = {
-    "method": "post",
-    "contentType": "application/json",
-    "payload": payloadParaEnvio, // Agora a variável existe
-    "muteHttpExceptions": true
-  };
+## 📌 Melhorias futuras  
 
-  try {
-    const response = UrlFetchApp.fetch(url, options);
-    const responseCode = response.getResponseCode();
-    const responseBody = response.getContentText();
+- [ ] Criar tratamento para diferentes tipos de pessoa (Física/Jurídica).  
+- [ ] Mapear mais campos do formulário para a OMIE.  
+- [ ] Adicionar testes automatizados com dados mockados.  
 
-    // Uma resposta bem sucedida da Omie geralmente retorna um JSON com 'codigo_status'
-    if (responseCode === 200 || responseCode === 201) {
-      const responseJson = JSON.parse(responseBody);
-      
-      if (responseJson.faultstring) {
-         return { success: false, message: `Erro Omie: ${responseJson.faultstring}` };
-      }
-      
-      // Sucesso
-      console.log(`Cliente ${clienteData.param[0].razao_social} processado. Resposta: ${responseBody}`);
-      return { success: true, message: "Cliente processado com sucesso." };
+---
 
-    } else {
-      console.log(`ERRO HTTP: Cliente ${clienteData.param[0].razao_social}. Código: ${responseCode}, Resposta: ${responseBody}`);
-      return { success: false, message: `Erro HTTP: ${responseCode} - ${responseBody}` };
-    }
-  } catch (e) {
-    console.log(`EXCEÇÃO: Cliente ${clienteData.param[0].razao_social}. Exceção ao chamar a API: ${e.toString()}`);
-    return { success: false, message: `Exceção: ${e.toString()}` };
-  }
-}
+## 📜 Licença  
+
+Este projeto está sob a licença **MIT** – fique à vontade para adaptar e evoluir para suas próprias necessidades.  
