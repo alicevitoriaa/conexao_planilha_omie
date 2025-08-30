@@ -67,8 +67,6 @@ Este projeto nasceu da necessidade de **economizar tempo** no cadastro de client
 
 ## 📌 Melhorias futuras  
 
-- [ ] Criar tratamento para diferentes tipos de pessoa (Física/Jurídica).  
-- [ ] Mapear mais campos do formulário para a OMIE.  
 - [ ] Adicionar testes automatizados com dados mockados.  
 
 ---
