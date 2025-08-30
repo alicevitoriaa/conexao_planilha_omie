@@ -1,0 +1,78 @@
+/*** 
+* Esse código será para uso próprio e para minha preguiça de inserir dados dos clientes na OMIE.
+*/
+
+const props = PropertiesService.getScriptProperties();
+
+const OMIE_APP_KEY = props.getProperty('OMIE_APP_KEY');
+const OMIE_APP_SECRET = props.getProperty('OMIE_APP_SECRET');
+function onFormSubmit(){
+    const form = FormApp.getActiveForm();
+    const formResponse = form.getResponses()[form.getResponses().length - 1].getItemResponses();
+    //ordem form: Nome (índice 0), E-mail (1), Telefone(2), CEP(3)
+
+    const clienteData = {
+      call: "IncluirCliente", 
+      app_key: OMIE_APP_KEY,     
+      app_secret: OMIE_APP_SECRET, 
+      param: [{
+        "codigo_cliente_integracao": String(formResponse[3].getResponse()).replace(/\D/g, ''),
+        "nome_fantasia": formResponse[0].getResponse(),
+        "razao_social": formResponse[0].getResponse(),
+        "contato": formResponse[0].getResponse(),
+        "email": formResponse[1].getResponse(),
+        "cep": String(formResponse[3].getResponse()).replace(/\D/g, ''), // Limpa o CEP também por segurança
+        "telefone1_ddd": String(formResponse[2].getResponse()).slice(0, 2), 
+        "telefone1_numero": String(formResponse[2].getResponse()).slice(2), 
+        "pessoa_fisica": "S", 
+      }]
+    };
+
+    const result = enviarClienteParaOmie(clienteData);
+    if (!result.success) {
+      console.log(`ERRO: Falha ao processar cliente ${formResponse[0].getResponse()}. Detalhes: ${result.message}`);
+    }
+}
+
+function enviarClienteParaOmie(clienteData) {
+  const url = "https://app.omie.com.br/api/v1/geral/clientes/";
+
+  const payloadParaEnvio = JSON.stringify(clienteData);
+
+  console.log("==============================================================");
+  console.log(`Preparando para enviar cliente: ${clienteData.param[0].razao_social}`);
+  console.log("==============================================================");
+
+  const options = {
+    "method": "post",
+    "contentType": "application/json",
+    "payload": payloadParaEnvio,
+    "muteHttpExceptions": true
+  };
+
+  try {
+    const response = UrlFetchApp.fetch(url, options);
+    const responseCode = response.getResponseCode();
+    const responseBody = response.getContentText();
+
+    // Uma resposta bem sucedida da Omie geralmente retorna um JSON com 'codigo_status'
+    if (responseCode === 200 || responseCode === 201) {
+      const responseJson = JSON.parse(responseBody);
+      
+      if (responseJson.faultstring) {
+         return { success: false, message: `Erro Omie: ${responseJson.faultstring}` };
+      }
+      
+      // Sucesso
+      console.log(`Cliente ${clienteData.param[0].razao_social} processado. Resposta: ${responseBody}`);
+      return { success: true, message: "Cliente processado com sucesso." };
+
+    } else {
+      console.log(`ERRO HTTP: Cliente ${clienteData.param[0].razao_social}. Código: ${responseCode}, Resposta: ${responseBody}`);
+      return { success: false, message: `Erro HTTP: ${responseCode} - ${responseBody}` };
+    }
+  } catch (e) {
+    console.log(`EXCEÇÃO: Cliente ${clienteData.param[0].razao_social}. Exceção ao chamar a API: ${e.toString()}`);
+    return { success: false, message: `Exceção: ${e.toString()}` };
+  }
+}
